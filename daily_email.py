@@ -93,7 +93,7 @@ def fetch_gcal_events(ical_urls, date_from, date_to):
             val = dtstart.dt
             # All-day event (date object) vs timed event (datetime object)
             if isinstance(val, datetime):
-                event_date = val.astimezone(timezone.utc).date()
+                event_date = val.astimezone().date()
                 time_str = val.astimezone().strftime("%-I:%M%p").lower()
             else:
                 event_date = val
