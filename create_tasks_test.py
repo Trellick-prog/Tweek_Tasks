@@ -16,13 +16,21 @@ import os
 
 DRY_RUN = False  # set True to preview only
 
-# ── TASKS TO SCHEDULE ─────────────────────────────────────────────────────────
+# ── RECURRING TASKS ───────────────────────────────────────────────────────────
 # Schedules (uncomment to re-run next year):
-#   haircut        — every 6 weeks, Monday
+#   haircut          — every 6 weeks, Monday
 #   change bedsheets — every 2 weeks, Saturday
 RECURRING_TASKS = [
     # {"text": "haircut",         "weekday": 0, "interval_weeks": 6},
     # {"text": "change bedsheets","weekday": 5, "interval_weeks": 2},
+]
+
+# ── ONE-OFF TASKS ──────────────────────────────────────────────────────────────
+# Comment out after running to avoid duplicates.
+ONE_OFF_TASKS = [
+    {"text": "book dentist",     "date": "2026-06-01"},
+    {"text": "book dentist",     "date": "2027-01-05"},
+    {"text": "book car service", "date": "2026-12-15"},
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -105,6 +113,11 @@ def main():
         print(f"\n'{task['text']}' — {len(dates)} dates (every {task['interval_weeks']}w on weekday {task['weekday']}):")
         for d in dates:
             print(f"  {d}  {d.strftime('%A, %-d %B %Y')}")
+
+    for task in ONE_OFF_TASKS:
+        d = date.fromisoformat(task["date"])
+        all_tasks.append((task["text"], [d]))
+        print(f"\n'{task['text']}' — one-off: {d.strftime('%A, %-d %B %Y')}")
 
     if DRY_RUN:
         print("\nDRY_RUN=True — not sending anything.")
