@@ -28,9 +28,9 @@ RECURRING_TASKS = [
 # ── ONE-OFF TASKS ──────────────────────────────────────────────────────────────
 # Comment out after running to avoid duplicates.
 ONE_OFF_TASKS = [
-    {"text": "book dentist",     "date": "2026-06-01"},
-    {"text": "book dentist",     "date": "2027-01-05"},
-    {"text": "book car service", "date": "2026-12-15"},
+    # {"text": "book dentist",     "date": "2026-06-01"},
+    # {"text": "book dentist",     "date": "2027-01-05"},
+    # {"text": "book car service", "date": "2026-12-15"},
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
