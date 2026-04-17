@@ -17,6 +17,8 @@ from email.mime.text import MIMEText
 
 import os
 
+HISTORY_PATH = os.path.join(os.path.dirname(__file__), "task_history.json")
+
 # Load .env file if present
 _env_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(_env_path):
@@ -37,6 +39,45 @@ GMAIL_USER     = os.getenv("GMAIL_USER",     "htrenear7@gmail.com")
 GMAIL_APP_PASS = os.getenv("GMAIL_APP_PASS", "")
 EMAIL_TO       = os.getenv("EMAIL_TO",       "htrenear7@gmail.com")
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def _normalize(text):
+    return text.lower().strip()
+
+
+def load_history():
+    if os.path.exists(HISTORY_PATH):
+        with open(HISTORY_PATH) as f:
+            return json.load(f)
+    return {}
+
+
+def update_task_history(today_tasks, today):
+    history = load_history()
+    yesterday_str = (today - timedelta(1)).isoformat()
+    today_str = today.isoformat()
+    cutoff_str = (today - timedelta(14)).isoformat()
+
+    for t in today_tasks:
+        key = _normalize(t.get("text", ""))
+        if not key:
+            continue
+        entry = history.get(key)
+        if entry:
+            if entry["last_seen"] == yesterday_str:
+                entry["days_seen"] += 1
+                entry["last_seen"] = today_str
+            elif entry["last_seen"] != today_str:
+                history[key] = {"first_seen": today_str, "last_seen": today_str, "days_seen": 1}
+        else:
+            history[key] = {"first_seen": today_str, "last_seen": today_str, "days_seen": 1}
+
+    history = {k: v for k, v in history.items() if v["last_seen"] >= cutoff_str}
+
+    with open(HISTORY_PATH, "w") as f:
+        json.dump(history, f, indent=2)
+
+    return history
 
 
 def get_token():
@@ -114,7 +155,7 @@ def fetch_gcal_events(ical_urls, date_from, date_to):
     return events_by_date
 
 
-def build_html(tasks_by_date, events_by_date, today):
+def build_html(tasks_by_date, events_by_date, today, history=None):
     day_names = {
         today: "Today",
         today + timedelta(1): "Tomorrow",
@@ -147,7 +188,9 @@ def build_html(tasks_by_date, events_by_date, today):
 
         # Incomplete tasks
         for t in incomplete:
-            rows += f'<tr><td style="padding:8px 16px;border-bottom:1px solid #f0f0f0;">○ {t["text"]}</td></tr>'
+            days = (history or {}).get(_normalize(t.get("text", "")), {}).get("days_seen", 1)
+            suffix = f' <span style="color:#EF4444;font-size:12px;font-weight:600;">({days}d)</span>' if days >= 2 else ""
+            rows += f'<tr><td style="padding:8px 16px;border-bottom:1px solid #f0f0f0;">○ {t["text"]}{suffix}</td></tr>'
 
         # Completed tasks
         for t in done:
@@ -219,7 +262,11 @@ def main():
     print(f"Fetching {len(GCAL_URLS)} Google Calendar(s)...")
     events_by_date = fetch_gcal_events(GCAL_URLS, today, end_date)
 
-    html = build_html(tasks_by_date, events_by_date, today)
+    today_tasks = [t for t in tasks_by_date.get(today, []) if not t.get("done")]
+    history = update_task_history(today_tasks, today)
+    print(f"Task history updated ({len(history)} entries).")
+
+    html = build_html(tasks_by_date, events_by_date, today, history)
     send_email(html)
     print("Email sent.")
 
