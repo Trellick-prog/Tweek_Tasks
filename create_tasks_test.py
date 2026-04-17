@@ -63,6 +63,8 @@ def create_task(token, task_date, text):
         "calendarId": CALENDAR_ID,
         "date": task_date.isoformat(),
         "text": text,
+        "done": False,
+        "gcal": False,
     }).encode()
     req = urllib.request.Request(
         "https://tweek.so/api/v1/tasks",
