@@ -17,6 +17,9 @@ import os
 DRY_RUN = False  # set True to preview only
 
 # ── TASKS TO SCHEDULE ─────────────────────────────────────────────────────────
+# Schedules (uncomment to re-run next year):
+#   haircut        — every 6 weeks, Monday
+#   change bedsheets — every 2 weeks, Saturday
 RECURRING_TASKS = [
     # {"text": "haircut",         "weekday": 0, "interval_weeks": 6},
     # {"text": "change bedsheets","weekday": 5, "interval_weeks": 2},
