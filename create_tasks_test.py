@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-create_tasks_test.py - Test creating tasks via tweek.so API.
+create_tasks_test.py - Create recurring tasks via tweek.so API.
 Set DRY_RUN = True to preview dates without sending.
-Set TEST_ONLY = True to only send the first task as a sanity check.
+
+Add entries to RECURRING_TASKS to schedule more tasks.
+weekday: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
 """
 
 import json
@@ -12,8 +14,14 @@ from datetime import date, timedelta
 
 import os
 
-DRY_RUN   = False  # set True to preview only
-TEST_ONLY = False  # set True to send just the first task
+DRY_RUN = False  # set True to preview only
+
+# ── TASKS TO SCHEDULE ─────────────────────────────────────────────────────────
+RECURRING_TASKS = [
+    {"text": "haircut",         "weekday": 0, "interval_weeks": 6},
+    {"text": "change bedsheets","weekday": 5, "interval_weeks": 2},
+]
+# ─────────────────────────────────────────────────────────────────────────────
 
 _env_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(_env_path):
@@ -42,20 +50,19 @@ def get_token():
         return json.loads(r.read())["id_token"]
 
 
-def next_monday(from_date):
-    """Return the next Monday on or after from_date."""
-    days_ahead = (0 - from_date.weekday()) % 7  # 0 = Monday
+def next_weekday(from_date, weekday):
+    """Return the next occurrence of weekday (0=Mon…6=Sun) after from_date."""
+    days_ahead = (weekday - from_date.weekday()) % 7
     if days_ahead == 0:
-        days_ahead = 7  # if today is Monday, take next week's
+        days_ahead = 7
     return from_date + timedelta(days=days_ahead)
 
 
-def mondays_every_6_weeks(start, year_end):
-    """Yield Mondays spaced 6 weeks apart from start through year_end."""
+def recurring_dates(start, interval_weeks, year_end):
     d = start
     while d <= year_end:
         yield d
-        d += timedelta(weeks=6)
+        d += timedelta(weeks=interval_weeks)
 
 
 def create_task(token, task_date, text):
@@ -86,13 +93,15 @@ def create_task(token, task_date, text):
 def main():
     today    = date.today()
     year_end = date(today.year, 12, 31)
-    first    = next_monday(today)
-    dates    = list(mondays_every_6_weeks(first, year_end))
 
-    print(f"Today: {today}  |  First Monday: {first}")
-    print(f"Dates to create 'haircut' ({len(dates)} total):")
-    for d in dates:
-        print(f"  {d}  {d.strftime('%A, %-d %B %Y')}")
+    all_tasks = []
+    for task in RECURRING_TASKS:
+        first = next_weekday(today, task["weekday"])
+        dates = list(recurring_dates(first, task["interval_weeks"], year_end))
+        all_tasks.append((task["text"], dates))
+        print(f"\n'{task['text']}' — {len(dates)} dates (every {task['interval_weeks']}w on weekday {task['weekday']}):")
+        for d in dates:
+            print(f"  {d}  {d.strftime('%A, %-d %B %Y')}")
 
     if DRY_RUN:
         print("\nDRY_RUN=True — not sending anything.")
@@ -101,16 +110,11 @@ def main():
     print("\nFetching token...")
     token = get_token()
 
-    targets = dates[:1] if TEST_ONLY else dates
-
-    for d in targets:
-        print(f"\nPOSTing task for {d}...", flush=True)
-        status, body = create_task(token, d, "haircut")
-        print(f"  Status: {status}")
-        print(f"  Body:   {body}")
-
-    if TEST_ONLY and len(dates) > 1:
-        print(f"\nTEST_ONLY=True — sent 1 of {len(dates)}. Check tweek.so, then set TEST_ONLY=False to send the rest.")
+    for text, dates in all_tasks:
+        print(f"\n── {text} ──")
+        for d in dates:
+            status, body = create_task(token, d, text)
+            print(f"  {d}  →  {status}  {body}")
 
 
 if __name__ == "__main__":
