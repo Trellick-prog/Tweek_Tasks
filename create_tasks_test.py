@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import os
 
 DRY_RUN   = False  # set True to preview only
-TEST_ONLY = True   # set True to send just the first task
+TEST_ONLY = False  # set True to send just the first task
 
 _env_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(_env_path):
