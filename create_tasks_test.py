@@ -18,8 +18,8 @@ DRY_RUN = False  # set True to preview only
 
 # ── TASKS TO SCHEDULE ─────────────────────────────────────────────────────────
 RECURRING_TASKS = [
-    {"text": "haircut",         "weekday": 0, "interval_weeks": 6},
-    {"text": "change bedsheets","weekday": 5, "interval_weeks": 2},
+    # {"text": "haircut",         "weekday": 0, "interval_weeks": 6},
+    # {"text": "change bedsheets","weekday": 5, "interval_weeks": 2},
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
